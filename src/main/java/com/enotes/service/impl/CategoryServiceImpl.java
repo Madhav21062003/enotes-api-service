@@ -1,8 +1,11 @@
 package com.enotes.service.impl;
 
+import com.enotes.dto.CategoryDto;
 import com.enotes.entities.Category;
 import com.enotes.repository.CategoryRepository;
+import com.enotes.response.CategoryResponse;
 import com.enotes.service.CategoryService;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -17,21 +20,49 @@ public class CategoryServiceImpl implements CategoryService {
     @Autowired
     private CategoryRepository categoryRepo;
 
+    @Autowired
+    private ModelMapper mapper;
+
     @Override
-    public Boolean saveCategory(Category category) {
+    public Boolean saveCategory(CategoryDto categoryDto) {
+
+        //---------------------------  Using Mapper -----------------------------
+        Category category = mapper.map(categoryDto, Category.class);
         category.setIsDeleted(false);
         category.setCreatedBy(1);
         category.setCreatedOn(new Date());
         Category saveCategory = categoryRepo.save(category);
-        if (ObjectUtils.isEmpty(saveCategory))
+        if (ObjectUtils.isEmpty(saveCategory)){
             return false;
-        return true;
+        }
+        else {
+            return true;
+        }
+
+        //------------------ Without Using Mapper-----------------------------
+//        category.setIsDeleted(false);
+//        category.setCreatedBy(1);
+//        category.setCreatedOn(new Date());
+//        Category saveCategory = categoryRepo.save(category);
+//        if (ObjectUtils.isEmpty(saveCategory))
+//            return false;
+//        return true;
     }
 
     @Override
-    public List<Category> getAllCategory() {
+    public List<CategoryDto> getAllCategory() {
 
         List<Category> categories = categoryRepo.findAll();
-        return categories;
+        // Convert into DTO
+        List<CategoryDto> categoryDtoList = categories.stream().map(cat -> mapper.map(cat, CategoryDto.class)).toList();
+        return categoryDtoList;
+    }
+
+    @Override
+    public List<CategoryResponse> getActiveCategory() {
+        List<Category> categories = categoryRepo.findByIsActiveTrue();
+
+        List<CategoryResponse> categoryList = categories.stream().map(cat -> mapper.map(cat, CategoryResponse.class)).toList();
+        return categoryList;
     }
 }
